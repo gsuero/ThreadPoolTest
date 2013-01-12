@@ -29,6 +29,8 @@ public class ThreadPoolTest {
         new SimpleThread("Fiji", pool).start();
         new SimpleThread("DR", pool).start();
         new SimpleThread("USA", pool).start();
+        System.out.println("I want to close the pool");
+        pool.close();
         new SimpleThread("France", pool).start();
         new SimpleThread("Haiti", pool).start();
         try {
@@ -56,8 +58,6 @@ public class ThreadPoolTest {
         } catch (InterruptedException ex) {
             Logger.getLogger(ThreadPoolTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        System.out.println("I want to close the pool");
-        pool.close();
         System.out.println("pool closed?");
     }
 }

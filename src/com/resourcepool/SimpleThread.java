@@ -21,13 +21,10 @@ class SimpleThread extends Thread {
     public void run() {
         try {
             String object = null;
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 20; i++) {
                 object = pool.acquire();
                 System.out.println(getName() + " #" + i + " : " + object);
-                try {
                     pool.release(object);
-                    sleep((int)(Math.random() * 1000));
-                } catch (InterruptedException e) {}
             }
             System.out.println("DONE! " + getName());
             //pool.remove(object);

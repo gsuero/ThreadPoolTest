@@ -20,37 +20,49 @@ public class ResourcePool<R> {
     private boolean open = false;
     private Queue<R> checkedInResources; //Collections.synchronizedList()
     private Queue<R> checkedOutResources; //Collections.synchronizedList()
+    private final Object openess = new Object();
 
     public ResourcePool() {
         checkedInResources = new ConcurrentLinkedQueue<R>();
-        checkedOutResources = new ConcurrentLinkedQueue<R>(); 
+        checkedOutResources = new ConcurrentLinkedQueue<R>();
     }
 
     public void open() {
-        open = true;
+        synchronized (openess) {
+            open = true;
+        }
     }
 
     public boolean isOpen() {
-        return open;
+        synchronized (openess) {
+            return open;
+        }
     }
 
-    public synchronized void close() {
-        open = false;
-        while(checkedOutResources.size() >  0){
+    public void close() {
+        synchronized (openess) {
             try {
-                wait();
-                System.out.println("I waited");
+                System.out.println("checked out ? " + checkedOutResources.size());
+                while (checkedOutResources.size() > 0) {
+                    openess.wait();
+                    System.out.println("I waited");
+                }
             } catch (InterruptedException ex) {
                 Logger.getLogger(ResourcePool.class.getName()).log(Level.SEVERE, null, ex);
             }
+            open = false;
+            openess.notifyAll();
+
         }
-        notifyAll();
     }
 
     public void closeNow() {
-        open = false;
-        checkedInResources.addAll(checkedOutResources);
-        checkedOutResources.clear();
+        synchronized (openess) {
+            open = false;
+            checkedInResources.addAll(checkedOutResources);
+            checkedOutResources.clear();
+            openess.notify();
+        }
     }
 
     public synchronized R acquire() throws PoolNotOpenException, InterruptedException {
@@ -61,7 +73,7 @@ public class ResourcePool<R> {
             wait();
         }
         R resource = checkedInResources.poll();
-        checkedOutResources.add(resource);
+        checkedOutResources.offer(resource);
         return resource;
     }
 
@@ -100,7 +112,7 @@ public class ResourcePool<R> {
 
     public synchronized boolean remove(R resource) {
         try {
-            while(checkedOutResources.contains(resource)) {
+            while (checkedOutResources.contains(resource)) {
                 wait();
             }
             if (checkedInResources.contains(resource)) {
